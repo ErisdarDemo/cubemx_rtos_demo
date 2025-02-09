@@ -8,7 +8,6 @@
  *  @last rev 2/8/25
  *
  *  @section 	Opens
- *  	move freertos content to freertos.c
  *  	Relocate
  *  		main.c root
  *  		proj to Proj\ subdir
@@ -26,6 +25,7 @@
  * 	   			MCU\
  * 	   		System\
  * 	   			Startup\
+ * 	   WDT working
  */
 /**************************************************************************************************/
 
@@ -47,40 +47,6 @@
 //************************************************************************************************//
 //                                            DEFINITIONS                                         //
 //************************************************************************************************//
-
-
-//--------------------------------------- RTOS Definitions ---------------------------------------//
-
-//Code Definitions
-#define _nop()				asm("NOP")
-
-//Design Specifications
-#define DFLT_STACK_SIZE		(128 * 4)				/* @open 	capture meaning of each num		  */
-
-//Task Definitions
-#define SYS_TASK_NAME		"sysTask"
-#define DATA_TASK_NAME		"dataTask"
-#define DISP_TASK_NAME		"dispTask"
-#define CTRL_TASK_NAME		"ctrlTask"
-
-//Timer Definitions
-#define OS_TIMER_NAME		"osTimer"
-
-//Mutex Definitions
-#define  DATA_MUTEX_NAME	"dataMutex"
-
-//Semaphore Definitions
-#define CTRL_SEM_NAME		"ctrlSem"
-#define CTRL_MAX_CT 		(1)						/* @open  	value descrip					  */
-#define CTRL_INIT_CT 		(1)						/* @open  	value descrip					  */
-
-#define CNTR_SEM_NAME		"cntrSem"
-#define CNTR_MAX_CT 		(10)					/* @open  	value descrip					  */
-#define CNTR_INIT_CT 		(0)						/* @open  	value descrip					  */
-
-//Event Definitions
-#define DATA_EVENT_NAME		"dataStore"
-
 
 //------------------------------------- Peripheral Definitions -----------------------------------//
 
@@ -112,95 +78,6 @@ TIM_HandleTypeDef  htim1;
 UART_HandleTypeDef huart2;
 WWDG_HandleTypeDef hwwdg;
 
-
-//************************************************************************************************//
-//                                             OS VARIABLES                                       //
-//************************************************************************************************//
-
-//--------------------------------------------- Tasks --------------------------------------------//
-
-//Tasks
-osThreadId_t sysTaskHandle;
-osThreadId_t dataTaskHandle;
-osThreadId_t dispTaskHandle;
-osThreadId_t ctrlTaskHandle;
-
-
-//Config
-const osThreadAttr_t sysTask_attributes = {
-  .name       = SYS_TASK_NAME,
-  .stack_size = DFLT_STACK_SIZE,
-  .priority   = (osPriority_t) osPriorityNormal,
-};
-
-const osThreadAttr_t dataTask_attributes = {
-  .name       = DATA_TASK_NAME,
-  .stack_size = DFLT_STACK_SIZE,
-  .priority   = (osPriority_t) osPriorityLow,
-};
-
-const osThreadAttr_t dispTask_attributes = {
-  .name       = DISP_TASK_NAME,
-  .stack_size = DFLT_STACK_SIZE,
-  .priority   = (osPriority_t) osPriorityLow,
-};
-
-const osThreadAttr_t ctrlTask_attributes = {
-  .name       = CTRL_TASK_NAME,
-  .stack_size = DFLT_STACK_SIZE,
-  .priority   = (osPriority_t) osPriorityLow,
-};
-
-
-//-------------------------------------------- Timers --------------------------------------------//
-
-//Timers
-osTimerId_t osTimerHandle;
-
-//Config
-const osTimerAttr_t osTimer_attributes = {
-  .name = OS_TIMER_NAME
-};
-
-
-//------------------------------------------- Mutexes --------------------------------------------//
-
-//Mutexes
-osMutexId_t dataMutexHandle;
-
-//Config
-const osMutexAttr_t dataMutex_attributes = {
-  .name = DATA_MUTEX_NAME
-};
-
-
-//------------------------------------------ Semaphores -------------------------------------------//
-
-//Semaphores
-osSemaphoreId_t ctrlSemHandle;
-osSemaphoreId_t cntrSemHandle;
-
-//Config
-const osSemaphoreAttr_t ctrlSem_attributes = {
-  .name = CTRL_SEM_NAME
-};
-
-const osSemaphoreAttr_t cntrSem_attributes = {
-  .name = CNTR_SEM_NAME
-};
-
-
-//-------------------------------------------- Events --------------------------------------------//
-
-//Events
-osEventFlagsId_t dataStoreHandle;
-
-//Config
-const osEventFlagsAttr_t dataStore_attributes = {
-  .name = DATA_EVENT_NAME
-};
-
-
 //************************************************************************************************//
 //                                   PRIVATE FUNCTION PROTOTYPES                                  //
 //************************************************************************************************//
@@ -214,15 +91,6 @@ static void USART2_UART_Init(void);
 static void TIM1_Init(void);
 static void WWDG_Init(void);
 
-//Task Prototypes
-void sysTask_Init(void *argument);
-void dataTask_Init(void *argument);
-void dispTask_Init(void *argument);
-void ctrlTask_Init(void *argument);
-
-//Timer Prototypes
-void osTimer_Callback(void *argument);
-
 
 //************************************************************************************************//
 //                                        PRIVATE ROUTINES                                        //
@@ -234,6 +102,9 @@ void osTimer_Callback(void *argument);
  *  @details    x
  *
  *  @return   (int) exit return status
+ *
+ *  @section 	Opens
+ *  	sys_init()
  */
 /**************************************************************************************************/
 int main(void) {
@@ -252,7 +123,7 @@ int main(void) {
 	GPIO_Init();
 	USART2_UART_Init();
 	TIM1_Init();
-#ifdef BUG_IS_FIXED
+#ifdef WDT_IS_WORKING
 	WWDG_Init();
 #endif
 	//Init Scheduler
@@ -476,12 +347,18 @@ static void WWDG_Init(void) {
 	//------------------------------------------- Setup ------------------------------------------//
 
 	//WDT Config
+#ifdef BUG_WHA
 	hwwdg.Instance       = WWDG;
 	hwwdg.Init.Prescaler = WWDG_PRESCALER_1;
 	hwwdg.Init.Window    = WWDG_WINDOW_VAL;
 	hwwdg.Init.Counter   = WWDG_CTR_VAL;
 	hwwdg.Init.EWIMode   = WWDG_EWI_DISABLE;
-
+#else
+	hwwdg.Instance       = WWDG;
+	hwwdg.Init.Prescaler = WWDG_PRESCALER_8;
+	hwwdg.Init.Window    = 80;
+	hwwdg.Init.Counter   = 127;
+#endif
 	//---------------------------------------- Initialize ----------------------------------------//
 
 	//Init WWDG
@@ -548,88 +425,6 @@ static void GPIO_Init(void) {
 	HAL_GPIO_Init(GPIOC,         &GPIO_PC3_InitStruct);
 	HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_LD2_InitStruct);
 
-
-	return;
-}
-
-
-/**************************************************************************************************/
-/** @fcn        void sysTask_Init(void *argument)
- *  @brief      Function implementing the sysTask thread.
- *  @details    x
- *
- *  @param    [in]  (void *) argument - x
- */
-/**************************************************************************************************/
-void sysTask_Init(void *argument) {
-
-	//Loop
-	for(;;) {
-		osDelay(1);
-	}
-}
-
-
-/**************************************************************************************************/
-/** @fcn        void dataTask_Init(void *argument)
- *  @brief      Function implementing the dataTask thread.
- *  @details    x
- *
- *  @param    [in]  (void *) argument - x
- */
-/**************************************************************************************************/
-void dataTask_Init(void *argument) {
-
-	//Loop
-	for(;;) {
-		osDelay(1);
-	}
-}
-
-
-/**************************************************************************************************/
-/** @fcn        void dispTask_Init(void *argument)
- *  @brief      Function implementing the dispTask thread.
- *  @details    x
- *
- *  @param    [in]  (void *) argument - x
- */
-/**************************************************************************************************/
-void dispTask_Init(void *argument) {
-
-	//Loop
-	for(;;) {
-		osDelay(1);
-	}
-}
-
-
-/**************************************************************************************************/
-/** @fcn        void ctrlTask_Init(void *argument)
- *  @brief      Function implementing the ctrlTask thread.
- *  @details    x
- *
- *  @param    [in]  (void *) argument - x
- */
-/**************************************************************************************************/
-void ctrlTask_Init(void *argument) {
-
-	//Loop
-	for(;;) {
-		osDelay(1);
-	}
-}
-
-
-/**************************************************************************************************/
-/** @fcn        void osTimer_Callback(void *argument)
- *  @brief      osTimer_Callback function
- *  @details    x
- *
- *  @param    [in]  (void *) argument - x
- */
-/**************************************************************************************************/
-void osTimer_Callback(void *argument) {
 	return;
 }
 
