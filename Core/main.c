@@ -8,14 +8,10 @@
  *  @last rev 2/8/25
  *
  *  @section 	Opens
- * 	   validate all features, peripherals & configs!
- * 	   timer demo
- * 	   ctrl flow demo
- * 	   c++ demo
- *
- *  @section 	Opens
- *  	WDT working
- *  	GPIO working in free-run mode
+ * 	   semaphores demo
+ * 	   mutex demo
+ * 	   event demo
+ * 	   swap to c++
  */
 /**************************************************************************************************/
 
@@ -50,7 +46,7 @@
 
 //Timer Definitions
 #define TIM_PRESCALER_VAL	(0)						/* @open  	value descrip					  */
-#define TIM_PERIOD_VAL		(0xFFFF)				/* @open  	value descrip					  */
+#define TIM_PERIOD_VAL		(65535) //0xFFFF)				/* @open  	value descrip					  */
 #define TIM_REP_VAL			(0)						/* @open  	value descrip					  */
 
 //USART Definitions
@@ -264,6 +260,7 @@ static void TIM1_Init(void) {
 	htim1.Init.ClockDivision          = TIM_CLOCKDIVISION_DIV1;
 	htim1.Init.RepetitionCounter      = TIM_REP_VAL;
 	htim1.Init.AutoReloadPreload      = TIM_AUTORELOAD_PRELOAD_DISABLE;
+	htim1.Channel                     = HAL_TIM_ACTIVE_CHANNEL_1;										//@open 	CATCH!
 
 	//Source Config
 	sClockSourceConfig.ClockSource    = TIM_CLOCKSOURCE_INTERNAL;
@@ -286,6 +283,9 @@ static void TIM1_Init(void) {
 	//Init Sync Config
 	stat = HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig);
 	Error_Catch(stat);
+
+	//Enable Timer
+	HAL_TIM_Base_Start(&htim1);
 
 	return;
 }

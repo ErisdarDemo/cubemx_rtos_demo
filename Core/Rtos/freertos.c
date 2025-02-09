@@ -14,6 +14,10 @@
 //                                            INCLUDES                                            //
 //************************************************************************************************//
 
+//Standard Library Includes
+#include <string.h>
+#include <stdio.h>
+
 //RTOS Includes
 #include "FreeRTOS.h"
 #include "task.h"
@@ -29,7 +33,10 @@
 //-----------------------------------------  Definitions -----------------------------------------//
 
 //Task Definitions
+#define SYSTEM_TASK_LOOP_DELAY_CTS	(800)			/* @open	define this in milliseconds		  */
 #define DATA_TASK_LOOP_DELAY_CTS	(800)			/* @open	define this in milliseconds		  */
+#define DISPLAY_TASK_LOOP_DELAY_CTS	(800)			/* @open	define this in milliseconds		  */
+#define CONTROL_TASK_LOOP_DELAY_CTS	(800)			/* @open	define this in milliseconds		  */
 
 
 //************************************************************************************************//
@@ -125,7 +132,7 @@ const osEventFlagsAttr_t dataStore_attributes = {
 /**************************************************************************************************/
 /** @fcn        void sysTask_Init(void *argument)
  *  @brief      Function implementing the sysTask thread.
- *  @details    x
+ *  @details    GPIO & UART demos
  *
  *  @param    [in]  (void *) argument - x
  *
@@ -144,6 +151,9 @@ void sysTask_Init(void *argument) {
 	//Loop
 	for(;;) {
 
+		//Notify
+		_printf("Calling System Task\n\r");
+
 		//Wiggle
 		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
@@ -154,7 +164,7 @@ void sysTask_Init(void *argument) {
 #endif
 
 		//Delay
-		osDelay(1);
+		osDelay(SYSTEM_TASK_LOOP_DELAY_CTS);
 	}
 }
 
@@ -162,29 +172,39 @@ void sysTask_Init(void *argument) {
 /**************************************************************************************************/
 /** @fcn        void dataTask_Init(void *argument)
  *  @brief      Function implementing the dataTask thread.
- *  @details    x
+ *  @details    Timer demo
  *
  *  @param    [in]  (void *) argument - x
+ *
+ *  @section 	Opens
+ *  	Move print to each thread! with staggered timing
  */
 /**************************************************************************************************/
 void dataTask_Init(void *argument) {
+
+	//Locals
+	uint32_t timer_val  = 0;
+	char buff[100]      = {0};
+
+	//Init
+	memset(&buff, 0x00, sizeof(buff));
 
 	//Loop
 	for(;;) {
 
 		//Notify
-		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+		_printf("Calling Data Task\n\r");
+
+		//Check
+		timer_val = __HAL_TIM_GetCounter(&htim1);
+
+		sprintf(&buff[0], "Timer: 0x%08lu\n\r\n\r", timer_val);
+
+		//Print
+		_printf(buff);
 
 		//Delay
 		osDelay(DATA_TASK_LOOP_DELAY_CTS);
-
-		//Notify
-		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-
-		//Delay
-		osDelay(DATA_TASK_LOOP_DELAY_CTS);
-
-		_printf("Cool!\n\r");
 	}
 }
 
@@ -192,7 +212,7 @@ void dataTask_Init(void *argument) {
 /**************************************************************************************************/
 /** @fcn        void dispTask_Init(void *argument)
  *  @brief      Function implementing the dispTask thread.
- *  @details    x
+ *  @details    Semaphore demo
  *
  *  @param    [in]  (void *) argument - x
  */
@@ -201,7 +221,12 @@ void dispTask_Init(void *argument) {
 
 	//Loop
 	for(;;) {
-		osDelay(1);
+
+		//Notify
+		_printf("Calling Disp Task\n\r");
+
+		//Delay
+		osDelay(DISPLAY_TASK_LOOP_DELAY_CTS);
 	}
 }
 
@@ -218,7 +243,12 @@ void ctrlTask_Init(void *argument) {
 
 	//Loop
 	for(;;) {
-		osDelay(1);
+
+		//Notify
+		_printf("Calling Control Task\n\r");
+
+		//Delay
+		osDelay(DISPLAY_TASK_LOOP_DELAY_CTS);
 	}
 }
 
