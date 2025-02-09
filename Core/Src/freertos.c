@@ -127,8 +127,9 @@ const osEventFlagsAttr_t dataStore_attributes = {
 void sysTask_Init(void *argument) {
 
 	//Locals
+#ifdef WDT_IS_WORKING
 	HAL_StatusTypeDef stat = HAL_ERROR;				/* status of HAL operations for review 		  */
-
+#endif
 
 	//Loop
 	for(;;) {

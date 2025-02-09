@@ -78,6 +78,7 @@ TIM_HandleTypeDef  htim1;
 UART_HandleTypeDef huart2;
 WWDG_HandleTypeDef hwwdg;
 
+
 //************************************************************************************************//
 //                                   PRIVATE FUNCTION PROTOTYPES                                  //
 //************************************************************************************************//
@@ -89,8 +90,9 @@ void SystemClock_Config(void);
 static void GPIO_Init(void);
 static void USART2_UART_Init(void);
 static void TIM1_Init(void);
+#ifdef WDT_IS_WORKING
 static void WWDG_Init(void);
-
+#endif
 
 //************************************************************************************************//
 //                                        PRIVATE ROUTINES                                        //
@@ -126,6 +128,7 @@ int main(void) {
 #ifdef WDT_IS_WORKING
 	WWDG_Init();
 #endif
+
 	//Init Scheduler
 	osKernelInitialize();
 
@@ -180,9 +183,6 @@ int main(void) {
 /** @fcn        void SystemClock_Config(void)
  *  @brief      System Clock Configuration
  *  @details    x
- *
- *  @section 	Opens
- *  	Check init {0} !!
  */
 /**************************************************************************************************/
 void SystemClock_Config(void) {
@@ -334,11 +334,9 @@ static void USART2_UART_Init(void) {
 /** @fcn        static void WWDG_Init(void)
  *  @brief      WWDG Initialization Function
  *  @details    x
- *
- *  @section 	Opens
- *  	pull out fcns omg
  */
 /**************************************************************************************************/
+#ifdef WDT_IS_WORKING
 static void WWDG_Init(void) {
 
 	//Locals
@@ -367,6 +365,7 @@ static void WWDG_Init(void) {
 
 	return;
 }
+#endif
 
 
 /**************************************************************************************************/
