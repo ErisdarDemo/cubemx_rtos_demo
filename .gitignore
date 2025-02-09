@@ -1,11 +1,11 @@
 ####################################################################################################
 ## @file        .gitignore
- #  @brief      x
+ #  @brief      CubeMX_RTOS
  #  @ref        x
  #
  #  @author     Justin Reina, Firmware Engineer
  #  @created    2/8/25
- #  @last rev   2/8/25
+ #  @last rev   2/9/25
  #
  #  @section    Legal Disclaimer
  #          © 2025 Justin Reina, All rights reserved. All contents of this source file and/or
@@ -18,4 +18,4 @@
 ####################################################################################################
 ##                                            BUILD FILES                                         ##
 ####################################################################################################
-Debug/
+Proj/Debug/

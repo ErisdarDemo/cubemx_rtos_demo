@@ -5,13 +5,14 @@
  *
  *  @author   Justin Reina, Firmware Engineer
  *  @created  2/8/25
- *  @last rev 2/8/25
+ *  @last rev 2/9/25
  *
  *  @section 	Opens
- * 	   semaphores demo
- * 	   mutex demo
- * 	   event demo
- * 	   swap to c++
+ *  	debug\ to out\?
+ * 	    semaphores demo
+ * 	    mutex demo
+ * 	    event demo
+ * 	    swap to c++
  */
 /**************************************************************************************************/
 
