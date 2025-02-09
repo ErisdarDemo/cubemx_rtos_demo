@@ -8,22 +8,10 @@
  *  @last rev 2/8/25
  *
  *  @section 	Opens
- *  	Relocate
- *  		main.c root
- *  		proj to Proj\ subdir
- * 		validate all features, peripherals & configs!
- * 	   uart demo
+ * 	   validate all features, peripherals & configs!
  * 	   timer demo
- * 	   tasks demo
  * 	   ctrl flow demo
  * 	   c++ demo
- * 	   re-org
- * 	   		Core\
- * 	   			root - main.c
- * 	   			RTOS\
- * 	   			MCU\
- * 	   		System\
- * 	   			Startup\
  *
  *  @section 	Opens
  *  	WDT working
@@ -38,6 +26,8 @@
 //Standard Library Includes
 #include <stdint.h>
 #include <string.h>
+#include <stdio.h>
+
 
 //Project Includes
 #include "main.h"
@@ -168,8 +158,10 @@ int main(void) {
 	//Init Events
 	dataStoreHandle = osEventFlagsNew(&dataStore_attributes);
 
-
 	//------------------------------------- Initialize RTOS --------------------------------------//
+
+	//Notify
+	_printf("Operating system in initialized\n\r");
 
 	//Start Scheduler
 	osKernelStart();
@@ -433,6 +425,28 @@ static void GPIO_Init(void) {
 //************************************************************************************************//
 //                                         PUBLIC ROUTINES                                        //
 //************************************************************************************************//
+
+/**************************************************************************************************/
+/** @fcn        void _printf(const char *str)
+ *  @brief      x
+ *  @details    x
+ *
+ *  @param  [in] (const char *) str - EOS terminated string to print
+ *
+ *	@pre	USART2_UART_Init()
+ *
+ *  @section    Opens
+ *      consider using printf() replacement direct
+ */
+/**************************************************************************************************/
+void _printf(const char *str) {
+
+	//Transmit
+	HAL_UART_Transmit(&huart2, (const uint8_t *) str, strlen(str), 1000000);
+
+	return;
+}
+
 
 /**************************************************************************************************/
 /** @fcn        void Error_Handler(void)

@@ -91,6 +91,9 @@ extern "C" {
 extern void Error_Handler(void);
 extern void Error_Catch(HAL_StatusTypeDef stat);
 
+//Print
+extern void _printf(const char *str);
+
 //--------------------------------------------- STM32 --------------------------------------------//
 extern TIM_HandleTypeDef  htim1;
 extern UART_HandleTypeDef huart2;

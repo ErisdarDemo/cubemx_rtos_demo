@@ -29,7 +29,7 @@
 //-----------------------------------------  Definitions -----------------------------------------//
 
 //Task Definitions
-#define DATA_TASK_LOOP_DELAY_CTS	(1000)			/* @open	define this in milliseconds		  */
+#define DATA_TASK_LOOP_DELAY_CTS	(800)			/* @open	define this in milliseconds		  */
 
 
 //************************************************************************************************//
@@ -183,6 +183,8 @@ void dataTask_Init(void *argument) {
 
 		//Delay
 		osDelay(DATA_TASK_LOOP_DELAY_CTS);
+
+		_printf("Cool!\n\r");
 	}
 }
 
