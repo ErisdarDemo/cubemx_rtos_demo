@@ -23,6 +23,16 @@
 
 
 //************************************************************************************************//
+//                                        DEFINITIONS & TYPES                                     //
+//************************************************************************************************//
+
+//-----------------------------------------  Definitions -----------------------------------------//
+
+//Task Definitions
+#define DATA_TASK_LOOP_DELAY_CTS	(1000)			/* @open	define this in milliseconds		  */
+
+
+//************************************************************************************************//
 //                                             OS VARIABLES                                       //
 //************************************************************************************************//
 
@@ -161,7 +171,18 @@ void dataTask_Init(void *argument) {
 
 	//Loop
 	for(;;) {
-		osDelay(1);
+
+		//Notify
+		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+
+		//Delay
+		osDelay(DATA_TASK_LOOP_DELAY_CTS);
+
+		//Notify
+		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+
+		//Delay
+		osDelay(DATA_TASK_LOOP_DELAY_CTS);
 	}
 }
 

@@ -12,7 +12,6 @@
  *  		main.c root
  *  		proj to Proj\ subdir
  * 		validate all features, peripherals & configs!
- * 	   gpio demo
  * 	   uart demo
  * 	   timer demo
  * 	   tasks demo
@@ -25,7 +24,10 @@
  * 	   			MCU\
  * 	   		System\
  * 	   			Startup\
- * 	   WDT working
+ *
+ *  @section 	Opens
+ *  	WDT working
+ *  	GPIO working in free-run mode
  */
 /**************************************************************************************************/
 
