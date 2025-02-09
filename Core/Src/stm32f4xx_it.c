@@ -1,187 +1,141 @@
-/* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * @file    stm32f4xx_it.c
-  * @brief   Interrupt Service Routines.
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2025 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
-/* USER CODE END Header */
+/**************************************************************************************************/
+/** @file     stm32f4xx_it.c
+ *  @brief    Interrupt Service Routines
+ *  @details  x
+ *
+ *  @section 	Use
+ *  	Add additional interrupt handlers to the base of this file
+ */
+/**************************************************************************************************/
 
-/* Includes ------------------------------------------------------------------*/
-#include "main.h"
+
+//************************************************************************************************//
+//                                            INCLUDES                                            //
+//************************************************************************************************//
+
+//Standard Library Includes
+#include <stdint.h>
+
+//SDK Includes
 #include "stm32f4xx_it.h"
+
+//RTOS Includes
 #include "FreeRTOS.h"
 #include "task.h"
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-/* USER CODE END Includes */
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN TD */
+//Project Includes
+#include "main.h"
 
-/* USER CODE END TD */
 
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
+//************************************************************************************************//
+//                     Cortex-M4 Processor Interruption and Exception Handlers                    //
+//************************************************************************************************//
 
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
-/* USER CODE BEGIN PFP */
-
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-/* USER CODE END 0 */
-
-/* External variables --------------------------------------------------------*/
-
-/* USER CODE BEGIN EV */
-
-/* USER CODE END EV */
-
-/******************************************************************************/
-/*           Cortex-M4 Processor Interruption and Exception Handlers          */
-/******************************************************************************/
-/**
-  * @brief This function handles Non maskable interrupt.
-  */
-void NMI_Handler(void)
-{
-  /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
-
-  /* USER CODE END NonMaskableInt_IRQn 0 */
-  /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
-   while (1)
-  {
-  }
-  /* USER CODE END NonMaskableInt_IRQn 1 */
+/**************************************************************************************************/
+/** @fcn        void NMI_Handler(void)
+ *  @brief      This function handles Non maskable interrupt
+ *  @details    x
+ *
+ *  @return   no return
+ */
+/**************************************************************************************************/
+void NMI_Handler(void) {
+	for(;;);
 }
 
-/**
-  * @brief This function handles Hard fault interrupt.
-  */
-void HardFault_Handler(void)
-{
-  /* USER CODE BEGIN HardFault_IRQn 0 */
 
-  /* USER CODE END HardFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_HardFault_IRQn 0 */
-    /* USER CODE END W1_HardFault_IRQn 0 */
-  }
+/**************************************************************************************************/
+/** @fcn        void HardFault_Handler(void)
+ *  @brief      This function handles Hard fault interrupt
+ *  @details    x
+ *
+ *  @return   no return
+ */
+/**************************************************************************************************/
+void HardFault_Handler(void) {
+	for(;;);
 }
 
-/**
-  * @brief This function handles Memory management fault.
-  */
-void MemManage_Handler(void)
-{
-  /* USER CODE BEGIN MemoryManagement_IRQn 0 */
 
-  /* USER CODE END MemoryManagement_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
-    /* USER CODE END W1_MemoryManagement_IRQn 0 */
-  }
+/**************************************************************************************************/
+/** @fcn        void MemManage_Handler(void)
+ *  @brief      This function handles Memory management fault
+ *  @details    x
+ *
+ *  @return   no return
+ */
+/**************************************************************************************************/
+void MemManage_Handler(void) {
+	for(;;);
 }
 
-/**
-  * @brief This function handles Pre-fetch fault, memory access fault.
-  */
-void BusFault_Handler(void)
-{
-  /* USER CODE BEGIN BusFault_IRQn 0 */
 
-  /* USER CODE END BusFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_BusFault_IRQn 0 */
-    /* USER CODE END W1_BusFault_IRQn 0 */
-  }
+/**************************************************************************************************/
+/** @fcn        void BusFault_Handler(void)
+ *  @brief      This function handles Pre-fetch fault, memory access fault
+ *  @details    x
+ *
+ *  @return   no return
+ */
+/**************************************************************************************************/
+void BusFault_Handler(void) {
+	for(;;);
 }
 
-/**
-  * @brief This function handles Undefined instruction or illegal state.
-  */
-void UsageFault_Handler(void)
-{
-  /* USER CODE BEGIN UsageFault_IRQn 0 */
 
-  /* USER CODE END UsageFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_UsageFault_IRQn 0 */
-    /* USER CODE END W1_UsageFault_IRQn 0 */
-  }
+/**************************************************************************************************/
+/** @fcn        void UsageFault_Handler(void)
+ *  @brief      This function handles Undefined instruction or illegal state
+ *  @details    x
+ *
+ *  @return   no return
+ */
+/**************************************************************************************************/
+void UsageFault_Handler(void) {
+	for(;;);
 }
 
-/**
-  * @brief This function handles Debug monitor.
-  */
-void DebugMon_Handler(void)
-{
-  /* USER CODE BEGIN DebugMonitor_IRQn 0 */
 
-  /* USER CODE END DebugMonitor_IRQn 0 */
-  /* USER CODE BEGIN DebugMonitor_IRQn 1 */
-
-  /* USER CODE END DebugMonitor_IRQn 1 */
+/**************************************************************************************************/
+/** @fcn        void DebugMon_Handler(void)
+ *  @brief      This function handles Debug monitor
+ *  @details    x
+ *
+ *  @return   no return
+ */
+/**************************************************************************************************/
+void DebugMon_Handler(void) {
+	return;
 }
 
-/**
-  * @brief This function handles System tick timer.
-  */
-void SysTick_Handler(void)
-{
-  /* USER CODE BEGIN SysTick_IRQn 0 */
 
-  /* USER CODE END SysTick_IRQn 0 */
-  HAL_IncTick();
-#if (INCLUDE_xTaskGetSchedulerState == 1 )
-  if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)
-  {
-#endif /* INCLUDE_xTaskGetSchedulerState */
-  xPortSysTickHandler();
-#if (INCLUDE_xTaskGetSchedulerState == 1 )
-  }
-#endif /* INCLUDE_xTaskGetSchedulerState */
-  /* USER CODE BEGIN SysTick_IRQn 1 */
+/**************************************************************************************************/
+/** @fcn        void SysTick_Handler(void)
+ *  @brief      This function handles System tick timer
+ *  @details    x
+ *
+ *  @return   no return
+ *
+ *  @section 	Opens
+ *  	Drop that shit
+ */
+/**************************************************************************************************/
+void SysTick_Handler(void) {
 
-  /* USER CODE END SysTick_IRQn 1 */
+	//Locals
+	BaseType_t stat = UINT32_MAX;
+
+	//Update
+	HAL_IncTick();
+
+	//Check
+	stat = xTaskGetSchedulerState();
+
+	//Handle
+	if(stat != taskSCHEDULER_NOT_STARTED) {
+		xPortSysTickHandler();
+	}
+
+	return;
 }
 
-/******************************************************************************/
-/* STM32F4xx Peripheral Interrupt Handlers                                    */
-/* Add here the Interrupt Handlers for the used peripherals.                  */
-/* For the available peripheral interrupt handler names,                      */
-/* please refer to the startup file (startup_stm32f4xx.s).                    */
-/******************************************************************************/
-
-/* USER CODE BEGIN 1 */
-
-/* USER CODE END 1 */

@@ -1,26 +1,34 @@
 /**************************************************************************************************/
-/** @file     main.h
- *  @brief    Header for main.c file.
- *  @details  This file contains the common defines of the application.
+/** @file     source.h
+ *  @brief    file headers are typically omitted for source file headers
+ *  @details  e.g. main.h header is typ omitted in priority for main.c header content
+ *
+ *  @author   Justin Reina, Firmware Engineer
+ *  @created  2/3/25
+ *  @last rev 2/3/25
  *
  *  @section    Opens
  *      none current
+ *
+ *  @section    Legal Disclaimer
+ *      © 2025 Justin Reina, All rights reserved. All contents of this source file and/or any other
+ *      related source files are the explicit property of Justin Reina. Do not distribute.
+ *      Do not copy.
  */
 /**************************************************************************************************/
-#ifndef __MAIN_H
-#define __MAIN_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 
 //************************************************************************************************//
 //                                            INCLUDES                                            //
 //************************************************************************************************//
 
+//Standard Library Includes
+
+//Library Includes
+
 //BSP Includes
-#include "stm32f4xx_hal.h"
+
+//Project Includes
 
 
 //************************************************************************************************//
@@ -29,34 +37,27 @@ extern "C" {
 
 //-----------------------------------------  Definitions -----------------------------------------//
 
-//Pin Definitions
-#define B1_Pin     			(GPIO_PIN_13)
-#define B1_GPIO_Port 		(GPIOC)
-#define USART_TX_Pin 		(GPIO_PIN_2)
-#define USART_TX_GPIO_Port 	(GPIOA)
-#define USART_RX_Pin 		(GPIO_PIN_3)
-#define USART_RX_GPIO_Port 	(GPIOA)
-#define LD2_Pin 			(GPIO_PIN_5)
-#define LD2_GPIO_Port 		(GPIOA)
-#define TMS_Pin 			(GPIO_PIN_13)
-#define TMS_GPIO_Port 		(GPIOA)
-#define TCK_Pin 			(GPIO_PIN_14)
-#define TCK_GPIO_Port 		(GPIOA)
-#define SWO_Pin 			(GPIO_PIN_3)
-#define SWO_GPIO_Port 		(GPIOB)
+
+//-------------------------------------------- Macros --------------------------------------------//
+
+
+//----------------------------------------- Enumerations -----------------------------------------//
+
+
+//------------------------------------------- Typedefs -------------------------------------------//
+
+
+//************************************************************************************************//
+//                                            VARIABLES                                           //
+//************************************************************************************************//
 
 
 //************************************************************************************************//
 //                                       FUNCTION DECLARATIONS                                    //
 //************************************************************************************************//
 
+//Public
+
+
 //Private
-void Error_Handler(void);
-void Error_Catch(HAL_StatusTypeDef stat);
 
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /* __MAIN_H */

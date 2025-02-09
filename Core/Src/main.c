@@ -1,563 +1,679 @@
-/* USER CODE BEGIN Header */
-/**
-  ******************************************************************************
-  * @file           : main.c
-  * @brief          : Main program body
-  *
-  * @section 	Opens
-  * 	templates
-  * 	clean this shit
-  * 	gpio!
-  * 	uart!!
-  * 	timer!!!
-  * 	tasks!!!
-  * 	ctrl flow
-  ******************************************************************************
-  * @attention
-  *
-  * Copyright (c) 2025 STMicroelectronics.
-  * All rights reserved.
-  *
-  * This software is licensed under terms that can be found in the LICENSE file
-  * in the root directory of this software component.
-  * If no LICENSE file comes with this software, it is provided AS-IS.
-  *
-  ******************************************************************************
-  */
-/* USER CODE END Header */
-/* Includes ------------------------------------------------------------------*/
+/**************************************************************************************************/
+/** @file     main.c
+ *  @brief    Main program body
+ *  @details  x
+ *
+ *  @author   Justin Reina, Firmware Engineer
+ *  @created  2/8/25
+ *  @last rev 2/8/25
+ *
+ *  @section 	Opens
+ *  	move freertos content to freertos.c
+ *  	Relocate
+ *  		main.c root
+ *  		proj to Proj\ subdir
+ * 		validate all features, peripherals & configs!
+ * 	   gpio demo
+ * 	   uart demo
+ * 	   timer demo
+ * 	   tasks demo
+ * 	   ctrl flow demo
+ * 	   c++ demo
+ * 	   re-org
+ * 	   		Core\
+ * 	   			root - main.c
+ * 	   			RTOS\
+ * 	   			MCU\
+ * 	   		System\
+ * 	   			Startup\
+ */
+/**************************************************************************************************/
+
+//************************************************************************************************//
+//                                              INCLUDES                                          //
+//************************************************************************************************//
+
+//Standard Library Includes
+#include <stdint.h>
+#include <string.h>
+
+//Project Includes
 #include "main.h"
+
+//FreeRTOS Includes
 #include "cmsis_os.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
 
-/* USER CODE END Includes */
+//************************************************************************************************//
+//                                            DEFINITIONS                                         //
+//************************************************************************************************//
 
-/* Private typedef -----------------------------------------------------------*/
-/* USER CODE BEGIN PTD */
 
-/* USER CODE END PTD */
+//--------------------------------------- RTOS Definitions ---------------------------------------//
 
-/* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
+//Code Definitions
+#define _nop()				asm("NOP")
 
-/* USER CODE END PD */
+//Design Specifications
+#define DFLT_STACK_SIZE		(128 * 4)				/* @open 	capture meaning of each num		  */
 
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
+//Task Definitions
+#define SYS_TASK_NAME		"sysTask"
+#define DATA_TASK_NAME		"dataTask"
+#define DISP_TASK_NAME		"dispTask"
+#define CTRL_TASK_NAME		"ctrlTask"
 
-/* USER CODE END PM */
+//Timer Definitions
+#define OS_TIMER_NAME		"osTimer"
 
-/* Private variables ---------------------------------------------------------*/
-TIM_HandleTypeDef htim1;
+//Mutex Definitions
+#define  DATA_MUTEX_NAME	"dataMutex"
 
+//Semaphore Definitions
+#define CTRL_SEM_NAME		"ctrlSem"
+#define CTRL_MAX_CT 		(1)						/* @open  	value descrip					  */
+#define CTRL_INIT_CT 		(1)						/* @open  	value descrip					  */
+
+#define CNTR_SEM_NAME		"cntrSem"
+#define CNTR_MAX_CT 		(10)					/* @open  	value descrip					  */
+#define CNTR_INIT_CT 		(0)						/* @open  	value descrip					  */
+
+//Event Definitions
+#define DATA_EVENT_NAME		"dataStore"
+
+
+//------------------------------------- Peripheral Definitions -----------------------------------//
+
+//PLL Definitions
+#define PLL_DIV_FACTOR		(16)					/* @open  	value descrip					  */
+#define PLL_MULT_FACTOR		(336)					/* @open  	value descrip					  */
+#define PLL_DIV_Q_FACTOR	(2)						/* @open  	value descrip					  */
+#define PLL_DIV_R_FACTOR	(2)						/* @open  	value descrip					  */
+
+//Timer Definitions
+#define TIM_PRESCALER_VAL	(0)						/* @open  	value descrip					  */
+#define TIM_PERIOD_VAL		(0xFFFF)				/* @open  	value descrip					  */
+#define TIM_REP_VAL			(0)						/* @open  	value descrip					  */
+
+//USART Definitions
+#define UART_BAUD_RATE_BPS	(115200)				/* @open  	value descrip					  */
+
+//Watchdog Definitions
+#define WWDG_WINDOW_VAL		(64)					/* @open  	value descrip					  */
+#define WWDG_CTR_VAL		(64)					/* @open  	value descrip					  */
+
+
+//************************************************************************************************//
+//                                            SDK VARIABLES                                       //
+//************************************************************************************************//
+
+//Periphs
+TIM_HandleTypeDef  htim1;
 UART_HandleTypeDef huart2;
-
 WWDG_HandleTypeDef hwwdg;
 
-/* Definitions for sysTask */
+
+//************************************************************************************************//
+//                                             OS VARIABLES                                       //
+//************************************************************************************************//
+
+//--------------------------------------------- Tasks --------------------------------------------//
+
+//Tasks
 osThreadId_t sysTaskHandle;
-const osThreadAttr_t sysTask_attributes = {
-  .name = "sysTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityNormal,
-};
-/* Definitions for dataTask */
 osThreadId_t dataTaskHandle;
-const osThreadAttr_t dataTask_attributes = {
-  .name = "dataTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
-};
-/* Definitions for dispTask */
 osThreadId_t dispTaskHandle;
-const osThreadAttr_t dispTask_attributes = {
-  .name = "dispTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
-};
-/* Definitions for ctrlTask */
 osThreadId_t ctrlTaskHandle;
+
+
+//Config
+const osThreadAttr_t sysTask_attributes = {
+  .name       = SYS_TASK_NAME,
+  .stack_size = DFLT_STACK_SIZE,
+  .priority   = (osPriority_t) osPriorityNormal,
+};
+
+const osThreadAttr_t dataTask_attributes = {
+  .name       = DATA_TASK_NAME,
+  .stack_size = DFLT_STACK_SIZE,
+  .priority   = (osPriority_t) osPriorityLow,
+};
+
+const osThreadAttr_t dispTask_attributes = {
+  .name       = DISP_TASK_NAME,
+  .stack_size = DFLT_STACK_SIZE,
+  .priority   = (osPriority_t) osPriorityLow,
+};
+
 const osThreadAttr_t ctrlTask_attributes = {
-  .name = "ctrlTask",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
+  .name       = CTRL_TASK_NAME,
+  .stack_size = DFLT_STACK_SIZE,
+  .priority   = (osPriority_t) osPriorityLow,
 };
-/* Definitions for osTimer */
+
+
+//-------------------------------------------- Timers --------------------------------------------//
+
+//Timers
 osTimerId_t osTimerHandle;
+
+//Config
 const osTimerAttr_t osTimer_attributes = {
-  .name = "osTimer"
+  .name = OS_TIMER_NAME
 };
-/* Definitions for dataMutex */
+
+
+//------------------------------------------- Mutexes --------------------------------------------//
+
+//Mutexes
 osMutexId_t dataMutexHandle;
+
+//Config
 const osMutexAttr_t dataMutex_attributes = {
-  .name = "dataMutex"
+  .name = DATA_MUTEX_NAME
 };
-/* Definitions for ctrlSem */
+
+
+//------------------------------------------ Semaphores -------------------------------------------//
+
+//Semaphores
 osSemaphoreId_t ctrlSemHandle;
+osSemaphoreId_t cntrSemHandle;
+
+//Config
 const osSemaphoreAttr_t ctrlSem_attributes = {
-  .name = "ctrlSem"
+  .name = CTRL_SEM_NAME
 };
-/* Definitions for ctrSem */
-osSemaphoreId_t ctrSemHandle;
-const osSemaphoreAttr_t ctrSem_attributes = {
-  .name = "ctrSem"
+
+const osSemaphoreAttr_t cntrSem_attributes = {
+  .name = CNTR_SEM_NAME
 };
-/* Definitions for dataStore */
+
+
+//-------------------------------------------- Events --------------------------------------------//
+
+//Events
 osEventFlagsId_t dataStoreHandle;
+
+//Config
 const osEventFlagsAttr_t dataStore_attributes = {
-  .name = "dataStore"
+  .name = DATA_EVENT_NAME
 };
-/* USER CODE BEGIN PV */
 
-/* USER CODE END PV */
 
-/* Private function prototypes -----------------------------------------------*/
+//************************************************************************************************//
+//                                   PRIVATE FUNCTION PROTOTYPES                                  //
+//************************************************************************************************//
+
+//System Prototypes
 void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_USART2_UART_Init(void);
-static void MX_TIM1_Init(void);
-static void MX_WWDG_Init(void);
+
+//Cube Prototypes
+static void GPIO_Init(void);
+static void USART2_UART_Init(void);
+static void TIM1_Init(void);
+static void WWDG_Init(void);
+
+//Task Prototypes
 void sysTask_Init(void *argument);
 void dataTask_Init(void *argument);
 void dispTask_Init(void *argument);
 void ctrlTask_Init(void *argument);
+
+//Timer Prototypes
 void osTimer_Callback(void *argument);
 
-/* USER CODE BEGIN PFP */
 
-/* USER CODE END PFP */
+//************************************************************************************************//
+//                                        PRIVATE ROUTINES                                        //
+//************************************************************************************************//
 
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
+/**************************************************************************************************/
+/** @fcn        int main(void)
+ *  @brief      The application entry point
+ *  @details    x
+ *
+ *  @return   (int) exit return status
+ */
+/**************************************************************************************************/
+int main(void) {
 
-/* USER CODE END 0 */
+	//********************************************************************************************//
+	//                                          MCU INIT                                          //
+	//********************************************************************************************//
 
-/**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
-{
+	//Init HAL
+	HAL_Init();
 
-  /* USER CODE BEGIN 1 */
+	//Init Clocks
+	SystemClock_Config();
 
-  /* USER CODE END 1 */
+	//Init Peripheral
+	GPIO_Init();
+	USART2_UART_Init();
+	TIM1_Init();
+#ifdef BUG_IS_FIXED
+	WWDG_Init();
+#endif
+	//Init Scheduler
+	osKernelInitialize();
 
-  /* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+	//------------------------------------ Initialize Mutexes ------------------------------------//
 
-  /* USER CODE BEGIN Init */
+	//Init Mutexes
+	dataMutexHandle = osMutexNew(&dataMutex_attributes);
 
-  /* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
+	//----------------------------------- Initialize Semaphores ----------------------------------//
 
-  /* USER CODE BEGIN SysInit */
+	//Init Semaphores
+	ctrlSemHandle = osSemaphoreNew(CTRL_MAX_CT, CTRL_INIT_CT, &ctrlSem_attributes);
+	cntrSemHandle = osSemaphoreNew(CNTR_MAX_CT, CNTR_INIT_CT, &cntrSem_attributes);
 
-  /* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_USART2_UART_Init();
-  MX_TIM1_Init();
-  MX_WWDG_Init();
-  /* USER CODE BEGIN 2 */
+	//------------------------------------- Initialize Timers ------------------------------------//
 
-  /* USER CODE END 2 */
+	//Init Timers
+	osTimerHandle = osTimerNew(osTimer_Callback, osTimerPeriodic, NULL, &osTimer_attributes);
 
-  /* Init scheduler */
-  osKernelInitialize();
-  /* Create the mutex(es) */
-  /* creation of dataMutex */
-  dataMutexHandle = osMutexNew(&dataMutex_attributes);
 
-  /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
-  /* USER CODE END RTOS_MUTEX */
+	//------------------------------------- Initialize Tasks -------------------------------------//
 
-  /* Create the semaphores(s) */
-  /* creation of ctrlSem */
-  ctrlSemHandle = osSemaphoreNew(1, 1, &ctrlSem_attributes);
+	//Init Tasks
+	sysTaskHandle  = osThreadNew(sysTask_Init,  NULL, &sysTask_attributes);
+	dataTaskHandle = osThreadNew(dataTask_Init, NULL, &dataTask_attributes);
+	dispTaskHandle = osThreadNew(dispTask_Init, NULL, &dispTask_attributes);
+	ctrlTaskHandle = osThreadNew(ctrlTask_Init, NULL, &ctrlTask_attributes);
 
-  /* creation of ctrSem */
-  ctrSemHandle = osSemaphoreNew(10, 0, &ctrSem_attributes);
 
-  /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
-  /* USER CODE END RTOS_SEMAPHORES */
+	//------------------------------------ Initialize Events -------------------------------------//
 
-  /* Create the timer(s) */
-  /* creation of osTimer */
-  osTimerHandle = osTimerNew(osTimer_Callback, osTimerPeriodic, NULL, &osTimer_attributes);
+	//Init Events
+	dataStoreHandle = osEventFlagsNew(&dataStore_attributes);
 
-  /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
-  /* USER CODE END RTOS_TIMERS */
 
-  /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
-  /* USER CODE END RTOS_QUEUES */
+	//------------------------------------- Initialize RTOS --------------------------------------//
 
-  /* Create the thread(s) */
-  /* creation of sysTask */
-  sysTaskHandle = osThreadNew(sysTask_Init, NULL, &sysTask_attributes);
+	//Start Scheduler
+	osKernelStart();
 
-  /* creation of dataTask */
-  dataTaskHandle = osThreadNew(dataTask_Init, NULL, &dataTask_attributes);
-
-  /* creation of dispTask */
-  dispTaskHandle = osThreadNew(dispTask_Init, NULL, &dispTask_attributes);
-
-  /* creation of ctrlTask */
-  ctrlTaskHandle = osThreadNew(ctrlTask_Init, NULL, &ctrlTask_attributes);
-
-  /* USER CODE BEGIN RTOS_THREADS */
-  /* add threads, ... */
-  /* USER CODE END RTOS_THREADS */
-
-  /* creation of dataStore */
-  dataStoreHandle = osEventFlagsNew(&dataStore_attributes);
-
-  /* USER CODE BEGIN RTOS_EVENTS */
-  /* add events, ... */
-  /* USER CODE END RTOS_EVENTS */
-
-  /* Start scheduler */
-  osKernelStart();
-
-  /* We should never get here as control is now taken by the scheduler */
-
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
-  while (1)
-  {
-    /* USER CODE END WHILE */
-
-    /* USER CODE BEGIN 3 */
-  }
-  /* USER CODE END 3 */
+	//Loop
+	for(;;) {
+		_nop();										/* @open ErrorHandler? should never get here  */
+	}
 }
 
-/**
-  * @brief System Clock Configuration
-  * @retval None
-  */
-void SystemClock_Config(void)
-{
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /** Configure the main internal regulator output voltage
-  */
-  __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
+/**************************************************************************************************/
+/** @fcn        void SystemClock_Config(void)
+ *  @brief      System Clock Configuration
+ *  @details    x
+ *
+ *  @section 	Opens
+ *  	Check init {0} !!
+ */
+/**************************************************************************************************/
+void SystemClock_Config(void) {
 
-  /** Initializes the RCC Oscillators according to the specified parameters
-  * in the RCC_OscInitTypeDef structure.
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 16;
-  RCC_OscInitStruct.PLL.PLLN = 336;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV4;
-  RCC_OscInitStruct.PLL.PLLQ = 2;
-  RCC_OscInitStruct.PLL.PLLR = 2;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
+	//Locals
+	HAL_StatusTypeDef stat = HAL_ERROR;				/* status of HAL operations for review 		  */
+	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+	RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-  /** Initializes the CPU, AHB and APB buses clocks
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+	//Init Variables
+	memset(&RCC_OscInitStruct, 0x00, sizeof(RCC_OscInitStruct));
+	memset(&RCC_ClkInitStruct, 0x00, sizeof(RCC_ClkInitStruct));
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
-  {
-    Error_Handler();
-  }
+
+	//------------------------------------------- Setup ------------------------------------------//
+
+	//Setup VREG
+	__HAL_RCC_PWR_CLK_ENABLE();
+	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE3);
+
+	//RCC Oscillator Config
+	RCC_OscInitStruct.OscillatorType      = RCC_OSCILLATORTYPE_HSI;
+	RCC_OscInitStruct.HSIState            = RCC_HSI_ON;
+	RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+	RCC_OscInitStruct.PLL.PLLState        = RCC_PLL_ON;
+	RCC_OscInitStruct.PLL.PLLSource       = RCC_PLLSOURCE_HSI;
+	RCC_OscInitStruct.PLL.PLLM            = PLL_DIV_FACTOR;
+	RCC_OscInitStruct.PLL.PLLN            = PLL_MULT_FACTOR;
+	RCC_OscInitStruct.PLL.PLLP            = RCC_PLLP_DIV4;
+	RCC_OscInitStruct.PLL.PLLQ            = PLL_DIV_Q_FACTOR;
+	RCC_OscInitStruct.PLL.PLLR            = PLL_DIV_R_FACTOR;
+
+	//RCC Clock Config (CPU/AHB/APB bus clks)
+	RCC_ClkInitStruct.ClockType      = RCC_CLOCKTYPE_HCLK
+								     | RCC_CLOCKTYPE_SYSCLK
+					                 | RCC_CLOCKTYPE_PCLK1
+								     | RCC_CLOCKTYPE_PCLK2;
+	RCC_ClkInitStruct.SYSCLKSource   = RCC_SYSCLKSOURCE_PLLCLK;
+	RCC_ClkInitStruct.AHBCLKDivider  = RCC_SYSCLK_DIV1;
+	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+
+	//---------------------------------------- Initialize ----------------------------------------//
+
+	//Init Oscillator
+	stat = HAL_RCC_OscConfig(&RCC_OscInitStruct);
+	Error_Catch(stat);
+
+	//Init Clock
+	stat = HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2);
+	Error_Catch(stat);
+
+	return;
 }
 
-/**
-  * @brief TIM1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_TIM1_Init(void)
-{
 
-  /* USER CODE BEGIN TIM1_Init 0 */
+/**************************************************************************************************/
+/** @fcn        static void TIM1_Init(void)
+ *  @brief      TIM1 Initialization Function
+ *  @details    x
+ *
+ *  @section	Opens
+ *  	Variable init check!
+ */
+/**************************************************************************************************/
+static void TIM1_Init(void) {
 
-  /* USER CODE END TIM1_Init 0 */
+	//Locals
+	HAL_StatusTypeDef stat = HAL_ERROR;				/* status of HAL operations for review 		  */
+	TIM_ClockConfigTypeDef  sClockSourceConfig = {0};
+	TIM_MasterConfigTypeDef sMasterConfig      = {0};
 
-  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
-  TIM_MasterConfigTypeDef sMasterConfig = {0};
+	//Init Variables
+	memset(&sClockSourceConfig, 0x00, sizeof(sClockSourceConfig));
+	memset(&sMasterConfig,      0x00, sizeof(sMasterConfig));
 
-  /* USER CODE BEGIN TIM1_Init 1 */
 
-  /* USER CODE END TIM1_Init 1 */
-  htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 0;
-  htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 65535;
-  htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-  htim1.Init.RepetitionCounter = 0;
-  htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-  if (HAL_TIM_Base_Init(&htim1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-  if (HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-  if (HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN TIM1_Init 2 */
+	//------------------------------------------- Setup ------------------------------------------//
 
-  /* USER CODE END TIM1_Init 2 */
+	//Timer Config
+	htim1.Instance                    = TIM1;
+	htim1.Init.Prescaler              = TIM_PRESCALER_VAL;
+	htim1.Init.CounterMode            = TIM_COUNTERMODE_UP;
+	htim1.Init.Period                 = TIM_PERIOD_VAL;
+	htim1.Init.ClockDivision          = TIM_CLOCKDIVISION_DIV1;
+	htim1.Init.RepetitionCounter      = TIM_REP_VAL;
+	htim1.Init.AutoReloadPreload      = TIM_AUTORELOAD_PRELOAD_DISABLE;
 
+	//Source Config
+	sClockSourceConfig.ClockSource    = TIM_CLOCKSOURCE_INTERNAL;
+
+	//Sync Config
+	sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+	sMasterConfig.MasterSlaveMode     = TIM_MASTERSLAVEMODE_DISABLE;
+
+
+	//---------------------------------------- Initialize ----------------------------------------//
+
+	//Init Timer
+	stat = HAL_TIM_Base_Init(&htim1);
+	Error_Catch(stat);
+
+	//Init Source Config
+	stat = HAL_TIM_ConfigClockSource(&htim1, &sClockSourceConfig);
+	Error_Catch(stat);
+
+	//Init Sync Config
+	stat = HAL_TIMEx_MasterConfigSynchronization(&htim1, &sMasterConfig);
+	Error_Catch(stat);
+
+	return;
 }
 
-/**
-  * @brief USART2 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_USART2_UART_Init(void)
-{
 
-  /* USER CODE BEGIN USART2_Init 0 */
+/**************************************************************************************************/
+/** @fcn        static void USART2_UART_Init(void)
+ *  @brief      USART2 Initialization Function
+ *  @details    x
+ */
+/**************************************************************************************************/
+static void USART2_UART_Init(void) {
 
-  /* USER CODE END USART2_Init 0 */
+	//Locals
+	HAL_StatusTypeDef stat = HAL_ERROR;				/* status of HAL operations for review 		  */
 
-  /* USER CODE BEGIN USART2_Init 1 */
+	//------------------------------------------- Setup ------------------------------------------//
 
-  /* USER CODE END USART2_Init 1 */
-  huart2.Instance = USART2;
-  huart2.Init.BaudRate = 115200;
-  huart2.Init.WordLength = UART_WORDLENGTH_8B;
-  huart2.Init.StopBits = UART_STOPBITS_1;
-  huart2.Init.Parity = UART_PARITY_NONE;
-  huart2.Init.Mode = UART_MODE_TX_RX;
-  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
-  if (HAL_UART_Init(&huart2) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN USART2_Init 2 */
+	//UART Config
+	huart2.Instance          = USART2;
+	huart2.Init.BaudRate     = UART_BAUD_RATE_BPS;
+	huart2.Init.WordLength   = UART_WORDLENGTH_8B;
+	huart2.Init.StopBits     = UART_STOPBITS_1;
+	huart2.Init.Parity       = UART_PARITY_NONE;
+	huart2.Init.Mode         = UART_MODE_TX_RX;
+	huart2.Init.HwFlowCtl    = UART_HWCONTROL_NONE;
+	huart2.Init.OverSampling = UART_OVERSAMPLING_16;
 
-  /* USER CODE END USART2_Init 2 */
+	//---------------------------------------- Initialize ----------------------------------------//
 
+	//Init UART
+	stat = HAL_UART_Init(&huart2);
+	Error_Catch(stat);
+
+	return;
 }
 
-/**
-  * @brief WWDG Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_WWDG_Init(void)
-{
 
-  /* USER CODE BEGIN WWDG_Init 0 */
+/**************************************************************************************************/
+/** @fcn        static void WWDG_Init(void)
+ *  @brief      WWDG Initialization Function
+ *  @details    x
+ *
+ *  @section 	Opens
+ *  	pull out fcns omg
+ */
+/**************************************************************************************************/
+static void WWDG_Init(void) {
 
-  /* USER CODE END WWDG_Init 0 */
+	//Locals
+	HAL_StatusTypeDef stat = HAL_ERROR;				/* status of HAL operations for review 		  */
 
-  /* USER CODE BEGIN WWDG_Init 1 */
+	//------------------------------------------- Setup ------------------------------------------//
 
-  /* USER CODE END WWDG_Init 1 */
-  hwwdg.Instance = WWDG;
-  hwwdg.Init.Prescaler = WWDG_PRESCALER_1;
-  hwwdg.Init.Window = 64;
-  hwwdg.Init.Counter = 64;
-  hwwdg.Init.EWIMode = WWDG_EWI_DISABLE;
-  if (HAL_WWDG_Init(&hwwdg) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN WWDG_Init 2 */
+	//WDT Config
+	hwwdg.Instance       = WWDG;
+	hwwdg.Init.Prescaler = WWDG_PRESCALER_1;
+	hwwdg.Init.Window    = WWDG_WINDOW_VAL;
+	hwwdg.Init.Counter   = WWDG_CTR_VAL;
+	hwwdg.Init.EWIMode   = WWDG_EWI_DISABLE;
 
-  /* USER CODE END WWDG_Init 2 */
+	//---------------------------------------- Initialize ----------------------------------------//
 
+	//Init WWDG
+	stat = HAL_WWDG_Init(&hwwdg);
+	Error_Catch(stat);
+
+	return;
 }
 
-/**
-  * @brief GPIO Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_GPIO_Init(void)
-{
-  GPIO_InitTypeDef GPIO_InitStruct = {0};
-/* USER CODE BEGIN MX_GPIO_Init_1 */
-/* USER CODE END MX_GPIO_Init_1 */
 
-  /* GPIO Ports Clock Enable */
-  __HAL_RCC_GPIOC_CLK_ENABLE();
-  __HAL_RCC_GPIOH_CLK_ENABLE();
-  __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOB_CLK_ENABLE();
+/**************************************************************************************************/
+/** @fcn        static void GPIO_Init(void)
+ *  @brief      GPIO Initialization Function
+ *  @details    x
+ */
+/**************************************************************************************************/
+static void GPIO_Init(void) {
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOC, GPIO_PIN_3, GPIO_PIN_RESET);
+	//Locals
+	GPIO_InitTypeDef GPIO_B1_InitStruct  = {0};
+	GPIO_InitTypeDef GPIO_PC3_InitStruct = {0};
+	GPIO_InitTypeDef GPIO_LD2_InitStruct = {0};
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+	//Init Variables
+	memset(&GPIO_B1_InitStruct,  0x00, sizeof(GPIO_B1_InitStruct));
+	memset(&GPIO_PC3_InitStruct, 0x00, sizeof(GPIO_PC3_InitStruct));
+	memset(&GPIO_LD2_InitStruct, 0x00, sizeof(GPIO_LD2_InitStruct));
 
-  /*Configure GPIO pin : B1_Pin */
-  GPIO_InitStruct.Pin = B1_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : PC3 */
-  GPIO_InitStruct.Pin = GPIO_PIN_3;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+	//------------------------------------------- Setup ------------------------------------------//
 
-  /*Configure GPIO pin : LD2_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
+	//Enable GPIO Clocks
+	__HAL_RCC_GPIOA_CLK_ENABLE();
+	__HAL_RCC_GPIOB_CLK_ENABLE();
+	__HAL_RCC_GPIOC_CLK_ENABLE();
+	__HAL_RCC_GPIOH_CLK_ENABLE();
 
-/* USER CODE BEGIN MX_GPIO_Init_2 */
-/* USER CODE END MX_GPIO_Init_2 */
+	//B1_Pin Config
+	GPIO_B1_InitStruct.Pin  = B1_Pin;
+	GPIO_B1_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+	GPIO_B1_InitStruct.Pull = GPIO_NOPULL;
+
+	//PC3 Config
+	GPIO_PC3_InitStruct.Pin   = GPIO_PIN_3;
+	GPIO_PC3_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
+	GPIO_PC3_InitStruct.Pull  = GPIO_NOPULL;
+	GPIO_PC3_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+
+	//LD2_Pin Config
+	GPIO_LD2_InitStruct.Pin   = LD2_Pin;
+	GPIO_LD2_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
+	GPIO_LD2_InitStruct.Pull  = GPIO_NOPULL;
+	GPIO_LD2_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+
+
+	//---------------------------------------- Initialize ----------------------------------------//
+
+	//Conf GPIO Output Levels
+	HAL_GPIO_WritePin(GPIOC,         GPIO_PIN_3, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin,    GPIO_PIN_RESET);
+
+	//Init GPIO Pins
+	HAL_GPIO_Init(B1_GPIO_Port,  &GPIO_B1_InitStruct);
+	HAL_GPIO_Init(GPIOC,         &GPIO_PC3_InitStruct);
+	HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_LD2_InitStruct);
+
+
+	return;
 }
 
-/* USER CODE BEGIN 4 */
 
-/* USER CODE END 4 */
+/**************************************************************************************************/
+/** @fcn        void sysTask_Init(void *argument)
+ *  @brief      Function implementing the sysTask thread.
+ *  @details    x
+ *
+ *  @param    [in]  (void *) argument - x
+ */
+/**************************************************************************************************/
+void sysTask_Init(void *argument) {
 
-/* USER CODE BEGIN Header_sysTask_Init */
-/**
-  * @brief  Function implementing the sysTask thread.
-  * @param  argument: Not used
-  * @retval None
-  */
-/* USER CODE END Header_sysTask_Init */
-void sysTask_Init(void *argument)
-{
-  /* USER CODE BEGIN 5 */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END 5 */
+	//Loop
+	for(;;) {
+		osDelay(1);
+	}
 }
 
-/* USER CODE BEGIN Header_dataTask_Init */
-/**
-* @brief Function implementing the dataTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_dataTask_Init */
-void dataTask_Init(void *argument)
-{
-  /* USER CODE BEGIN dataTask_Init */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END dataTask_Init */
+
+/**************************************************************************************************/
+/** @fcn        void dataTask_Init(void *argument)
+ *  @brief      Function implementing the dataTask thread.
+ *  @details    x
+ *
+ *  @param    [in]  (void *) argument - x
+ */
+/**************************************************************************************************/
+void dataTask_Init(void *argument) {
+
+	//Loop
+	for(;;) {
+		osDelay(1);
+	}
 }
 
-/* USER CODE BEGIN Header_dispTask_Init */
-/**
-* @brief Function implementing the dispTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_dispTask_Init */
-void dispTask_Init(void *argument)
-{
-  /* USER CODE BEGIN dispTask_Init */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END dispTask_Init */
+
+/**************************************************************************************************/
+/** @fcn        void dispTask_Init(void *argument)
+ *  @brief      Function implementing the dispTask thread.
+ *  @details    x
+ *
+ *  @param    [in]  (void *) argument - x
+ */
+/**************************************************************************************************/
+void dispTask_Init(void *argument) {
+
+	//Loop
+	for(;;) {
+		osDelay(1);
+	}
 }
 
-/* USER CODE BEGIN Header_ctrlTask_Init */
-/**
-* @brief Function implementing the ctrlTask thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_ctrlTask_Init */
-void ctrlTask_Init(void *argument)
-{
-  /* USER CODE BEGIN ctrlTask_Init */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END ctrlTask_Init */
+
+/**************************************************************************************************/
+/** @fcn        void ctrlTask_Init(void *argument)
+ *  @brief      Function implementing the ctrlTask thread.
+ *  @details    x
+ *
+ *  @param    [in]  (void *) argument - x
+ */
+/**************************************************************************************************/
+void ctrlTask_Init(void *argument) {
+
+	//Loop
+	for(;;) {
+		osDelay(1);
+	}
 }
 
-/* osTimer_Callback function */
-void osTimer_Callback(void *argument)
-{
-  /* USER CODE BEGIN osTimer_Callback */
 
-  /* USER CODE END osTimer_Callback */
+/**************************************************************************************************/
+/** @fcn        void osTimer_Callback(void *argument)
+ *  @brief      osTimer_Callback function
+ *  @details    x
+ *
+ *  @param    [in]  (void *) argument - x
+ */
+/**************************************************************************************************/
+void osTimer_Callback(void *argument) {
+	return;
 }
 
-/**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
-{
-  /* USER CODE BEGIN Error_Handler_Debug */
-  /* User can add his own implementation to report the HAL error return state */
-  __disable_irq();
-  while (1)
-  {
-  }
-  /* USER CODE END Error_Handler_Debug */
+
+//************************************************************************************************//
+//                                         PUBLIC ROUTINES                                        //
+//************************************************************************************************//
+
+/**************************************************************************************************/
+/** @fcn        void Error_Handler(void)
+ *  @brief      This function is executed in case of error occurrence.
+ *  @details    no return
+ *
+ *  @section    Opens
+ *      move to new system.c/h
+ *
+ *  @note   User can add his own implementation to report the HAL error return state
+ */
+/**************************************************************************************************/
+void Error_Handler(void) {
+
+	//Disable
+	__disable_irq();
+
+	//Catch
+	for(;;);
 }
 
-#ifdef  USE_FULL_ASSERT
-/**
-  * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
-  * @param  file: pointer to the source file name
-  * @param  line: assert_param error line source number
-  * @retval None
-  */
-void assert_failed(uint8_t *file, uint32_t line)
-{
-  /* USER CODE BEGIN 6 */
-  /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
-  /* USER CODE END 6 */
+
+/**************************************************************************************************/
+/** @fcn        void Error_Catch(HAL_StatusTypeDef stat)
+ *  @brief      Respond to HAL status
+ *  @warn		No return on error
+ *
+ *  @section    Opens
+ *      move to new system.c/h
+ */
+/**************************************************************************************************/
+ void Error_Catch(HAL_StatusTypeDef stat) {
+
+	//Catch & Handle
+	if(stat != HAL_OK) {
+		Error_Handler();
+	}
+
+	return;
 }
-#endif /* USE_FULL_ASSERT */
