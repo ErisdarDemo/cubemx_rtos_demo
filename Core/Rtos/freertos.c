@@ -39,6 +39,7 @@
 #define CONTROL_TASK_LOOP_DELAY_CTS	(800)			/* @open	define this in milliseconds		  */
 
 
+
 //************************************************************************************************//
 //                                             OS VARIABLES                                       //
 //************************************************************************************************//
@@ -46,10 +47,10 @@
 //--------------------------------------------- Tasks --------------------------------------------//
 
 //Tasks
-osThreadId_t sysTaskHandle;
-osThreadId_t dataTaskHandle;
-osThreadId_t dispTaskHandle;
-osThreadId_t ctrlTaskHandle;
+osThreadId_t sysTaskHandle;							/* System Operations Task					  */
+osThreadId_t dataTaskHandle;						/* Data Operations Task						  */
+osThreadId_t dispTaskHandle;						/* Console/UI Task							  */
+osThreadId_t ctrlTaskHandle;						/* Control Flow Taslk						  */
 
 
 //Config
@@ -81,7 +82,7 @@ const osThreadAttr_t ctrlTask_attributes = {
 //-------------------------------------------- Timers --------------------------------------------//
 
 //Timers
-osTimerId_t osTimerHandle;
+osTimerId_t osTimerHandle;							/* Sample FreeRTOS Timer					  */
 
 //Config
 const osTimerAttr_t osTimer_attributes = {
@@ -92,7 +93,7 @@ const osTimerAttr_t osTimer_attributes = {
 //------------------------------------------- Mutexes --------------------------------------------//
 
 //Mutexes
-osMutexId_t dataMutexHandle;
+osMutexId_t dataMutexHandle;						/* Sample FreeRTOS Mutex					  */
 
 //Config
 const osMutexAttr_t dataMutex_attributes = {
@@ -103,8 +104,8 @@ const osMutexAttr_t dataMutex_attributes = {
 //------------------------------------------ Semaphores -------------------------------------------//
 
 //Semaphores
-osSemaphoreId_t ctrlSemHandle;
-osSemaphoreId_t cntrSemHandle;
+osSemaphoreId_t ctrlSemHandle;						/* Sample FreeRTOS Binary Semaphore		 	 */
+osSemaphoreId_t cntrSemHandle;						/* Sample FreeRTOS Counting Semaphore		 */
 
 //Config
 const osSemaphoreAttr_t ctrlSem_attributes = {
@@ -119,15 +120,17 @@ const osSemaphoreAttr_t cntrSem_attributes = {
 //-------------------------------------------- Events --------------------------------------------//
 
 //Events
-osEventFlagsId_t dataStoreHandle;
+osEventFlagsId_t dataStoreHandle;					/* @Sample FreeRTOS Event					  */
 
 //Config
 const osEventFlagsAttr_t dataStore_attributes = {
   .name = DATA_EVENT_NAME
 };
 
-//PUBLIC FUNCTIONS
 
+//************************************************************************************************//
+//                                          PUBLIC FUNCTIONS                                      //
+//************************************************************************************************//
 
 /**************************************************************************************************/
 /** @fcn        void sysTask_Init(void *argument)
@@ -175,16 +178,13 @@ void sysTask_Init(void *argument) {
  *  @details    Timer demo
  *
  *  @param    [in]  (void *) argument - x
- *
- *  @section 	Opens
- *  	Move print to each thread! with staggered timing
  */
 /**************************************************************************************************/
 void dataTask_Init(void *argument) {
 
 	//Locals
-	uint32_t timer_val  = 0;
-	char buff[100]      = {0};
+	uint32_t timer_val = 0; 						/* time check value 						  */
+	char buff[100]     = {0};						/* print buffer								  */
 
 	//Init
 	memset(&buff, 0x00, sizeof(buff));
@@ -195,9 +195,10 @@ void dataTask_Init(void *argument) {
 		//Notify
 		_printf("Calling Data Task\n\r");
 
-		//Check
-		timer_val = __HAL_TIM_GetCounter(&htim1);
+		//Latch
+		timer_val = __HAL_TIM_GetCounter(&htim1);	/* grab current				                  */
 
+		//Prepare
 		sprintf(&buff[0], "Timer: 0x%08lu\n\r\n\r", timer_val);
 
 		//Print
@@ -259,6 +260,9 @@ void ctrlTask_Init(void *argument) {
  *  @details    x
  *
  *  @param    [in]  (void *) argument - x
+ *
+ *  @section 	Opens
+ *  	Prints notice
  */
 /**************************************************************************************************/
 void osTimer_Callback(void *argument) {

@@ -5,14 +5,18 @@
  *
  *  @author   Justin Reina, Firmware Engineer
  *  @created  2/8/25
- *  @last rev 2/9/25
+ *  @last rev 3/3/25
  *
  *  @section 	Opens
+ *  	integrate PM work
+ *  	...?
  *  	debug\ to out\?
  * 	    semaphores demo
  * 	    mutex demo
  * 	    event demo
  * 	    swap to c++
+ * 	    ...
+ * 	    start esp demo!
  */
 /**************************************************************************************************/
 

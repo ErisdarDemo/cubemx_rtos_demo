@@ -1,8 +1,25 @@
 @brief 		CubeMX FreeRTOS
 @details 	NUCLEO-F446RE (STM32F446RE)
 @auth 		Justin Reina
-@date 		2/8/25
+@date 		3/2/25
 
+
+@section 	Notice
+
+	Re-organization of repository servers (GitHub: Work, GitLab: Personal) in progress and repository kept offline until ready. Taking several years of content generation and cleaning this up!
+
+	Note that some of these repositories, e.g 'regression_test' or 'unit_test' in the new ErisdarTest organization are just placeholders, coming next!
+	
+@section 	Opens
+	Import expanded ProductMap demo
+	post
+	bring it live! Copy/Temp/Post Confluence to WWW
+
+
+
+	New ESP project
+	import STM demo
+	bring it live!
 
 @section 	Procedure
 	
