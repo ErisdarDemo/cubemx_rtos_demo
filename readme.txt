@@ -1,7 +1,7 @@
 @brief 		CubeMX FreeRTOS
 @details 	NUCLEO-F446RE (STM32F446RE)
 @auth 		Justin Reina
-@date 		3/2/25
+@date 		3/5/25
 
 
 @section 	Notice
@@ -10,16 +10,11 @@
 
 	Note that some of these repositories, e.g 'regression_test' or 'unit_test' in the new ErisdarTest organization are just placeholders, coming next!
 	
+	
+	
 @section 	Opens
 	Import expanded ProductMap demo
-	post
-	bring it live! Copy/Temp/Post Confluence to WWW
-
-
-
-	New ESP project
-	import STM demo
-	bring it live!
+	Port to ESP RTOS demo
 
 @section 	Procedure
 	
